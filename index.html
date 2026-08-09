@@ -1,492 +1,275 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UAE Traffic Congestion — Gridlock Watch</title>
-<meta name="description" content="Interactive dashboard visualizing UAE traffic congestion — hours lost, peak-hour patterns, hotspot corridors, and the RTA's 2026 response plan.">
-<meta property="og:title" content="Gridlock Watch — UAE Traffic Congestion Dashboard">
-<meta property="og:description" content="A single-file, no-build interactive dashboard exploring one of the UAE's fastest-worsening problems: road traffic congestion. Real reported figures from Inrix, TomTom, and the RTA.">
-<meta property="og:type" content="website">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
-<style>
-  :root{
-    --asphalt:#14171A;
-    --panel:#1D2124;
-    --panel-2:#22262A;
-    --line:#33383D;
-    --amber:#F2A93B;
-    --amber-dim:#8a6222;
-    --cyan:#35C9C1;
-    --red:#E15241;
-    --text:#ECEAE3;
-    --text-dim:#9BA3AC;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--asphalt);
-    color:var(--text);
-    font-family:'IBM Plex Sans', sans-serif;
-    min-height:100vh;
-    background-image:
-      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0);
-    background-size: 22px 22px;
-  }
-  .wrap{max-width:1180px; margin:0 auto; padding:0 24px 80px;}
-  a{color:inherit;}
-
-  /* ---------- Top bar ---------- */
-  .topbar{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:22px 24px; border-bottom:1px solid var(--line);
-    max-width:1180px; margin:0 auto;
-  }
-  .brand{
-    font-family:'Oswald', sans-serif; font-weight:700; letter-spacing:.08em;
-    font-size:15px; text-transform:uppercase; color:var(--text);
-    display:flex; align-items:center; gap:10px;
-  }
-  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--amber); box-shadow:0 0 8px var(--amber);}
-  .topbar .sub{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-dim); letter-spacing:.04em;}
-
-  /* ---------- Hero / gantry sign ---------- */
-  .hero{padding:56px 0 40px;}
-  .eyebrow{
-    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.14em;
-    color:var(--amber); text-transform:uppercase; margin-bottom:14px;
-  }
-  .hero h1{
-    font-family:'Oswald', sans-serif; font-weight:600; text-transform:uppercase;
-    font-size:clamp(28px,4.4vw,46px); line-height:1.08; margin:0 0 20px; max-width:820px;
-    color:var(--text);
-  }
-  .hero h1 em{font-style:normal; color:var(--amber);}
-
-  .gantry{
-    background:
-      radial-gradient(circle at 1px 1px, rgba(242,169,59,0.10) 1px, transparent 0) 0 0/8px 8px,
-      #101315;
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:26px 30px;
-    display:flex; align-items:flex-end; gap:28px; flex-wrap:wrap;
-    box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
-  }
-  .gantry-num{
-    font-family:'IBM Plex Mono', monospace; font-weight:600;
-    font-size:clamp(46px,8vw,84px); line-height:1;
-    color:var(--amber); text-shadow:0 0 18px rgba(242,169,59,0.45);
-    letter-spacing:.01em;
-  }
-  .gantry-unit{
-    font-family:'IBM Plex Mono', monospace; font-size:14px; color:var(--amber-dim);
-    text-transform:uppercase; margin-left:6px;
-  }
-  .gantry-desc{font-family:'IBM Plex Sans'; font-size:14px; color:var(--text-dim); max-width:360px; padding-bottom:6px;}
-  .gantry-desc b{color:var(--text); font-weight:600;}
-
-  .source-note{
-    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-dim);
-    margin-top:10px; letter-spacing:.02em;
-  }
-  .source-note a{color:var(--cyan); text-decoration:none; border-bottom:1px dotted var(--cyan);}
-
-  /* ---------- Metric strip ---------- */
-  .metric-strip{
-    display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:28px;
-  }
-  @media(max-width:820px){.metric-strip{grid-template-columns:repeat(2,1fr);}}
-  .metric{
-    background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:18px 18px 16px;
-  }
-  .metric .label{
-    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:.08em;
-    text-transform:uppercase; color:var(--text-dim); margin-bottom:10px;
-  }
-  .metric .val{
-    font-family:'Oswald', sans-serif; font-weight:600; font-size:30px; color:var(--text);
-    display:flex; align-items:baseline; gap:6px;
-  }
-  .metric .val span{font-family:'IBM Plex Mono'; font-size:13px; color:var(--text-dim); font-weight:400;}
-  .metric.up .val{color:var(--red);}
-  .metric.down .val{color:var(--cyan);}
-
-  /* ---------- Section shell ---------- */
-  section{margin-top:64px;}
-  .sec-head{display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap;}
-  .sec-head h2{
-    font-family:'Oswald', sans-serif; text-transform:uppercase; font-weight:600;
-    font-size:20px; letter-spacing:.03em; margin:0; color:var(--text);
-    display:flex; align-items:center; gap:10px;
-  }
-  .sec-head h2 .tag{
-    font-family:'IBM Plex Mono'; font-size:10px; background:var(--panel-2); color:var(--amber);
-    border:1px solid var(--line); padding:3px 8px; border-radius:3px; letter-spacing:.05em;
-  }
-  .sec-head p{font-family:'IBM Plex Sans'; font-size:13px; color:var(--text-dim); margin:0; max-width:420px;}
-
-  .panel{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:22px;}
-
-  /* toggle buttons */
-  .toggle-group{display:flex; gap:8px;}
-  .toggle-btn{
-    font-family:'IBM Plex Mono'; font-size:11.5px; letter-spacing:.04em; text-transform:uppercase;
-    background:var(--panel-2); color:var(--text-dim); border:1px solid var(--line);
-    padding:7px 14px; border-radius:4px; cursor:pointer; transition:.15s;
-  }
-  .toggle-btn:hover{color:var(--text);}
-  .toggle-btn.active{background:var(--amber); color:#1a1300; border-color:var(--amber); font-weight:600;}
-
-  .chart-wrap{position:relative; height:280px;}
-  .chart-caption{
-    font-family:'IBM Plex Mono'; font-size:10.5px; color:var(--text-dim); margin-top:14px;
-    border-top:1px solid var(--line); padding-top:10px; letter-spacing:.01em;
-  }
-
-  /* ---------- Hotspot signs ---------- */
-  .hotspot-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
-  @media(max-width:720px){.hotspot-grid{grid-template-columns:1fr;}}
-  .sign{
-    background:#0E3B2E; border:2px solid #175E48; border-radius:4px; padding:14px 16px;
-    font-family:'IBM Plex Sans'; position:relative; overflow:hidden;
-  }
-  .sign::before{
-    content:''; position:absolute; inset:3px; border:1px solid rgba(255,255,255,0.12); border-radius:2px; pointer-events:none;
-  }
-  .sign .road{
-    font-family:'Oswald', sans-serif; font-weight:600; text-transform:uppercase; font-size:16px;
-    color:#fff; display:flex; align-items:center; gap:8px; margin-bottom:4px;
-  }
-  .sign .road .code{
-    font-family:'IBM Plex Mono'; font-size:11px; background:#fff; color:#0E3B2E;
-    padding:2px 6px; border-radius:2px; font-weight:600;
-  }
-  .sign .note{font-size:12.5px; color:#CFE9DE;}
-  .sign .sev{
-    position:absolute; top:12px; right:14px; font-family:'IBM Plex Mono'; font-size:10px;
-    letter-spacing:.06em; text-transform:uppercase; padding:2px 7px; border-radius:10px;
-  }
-  .sev.high{background:rgba(225,82,65,0.2); color:#FF9C8E; border:1px solid rgba(225,82,65,0.5);}
-  .sev.med{background:rgba(242,169,59,0.18); color:#FFCE8A; border:1px solid rgba(242,169,59,0.5);}
-
-  /* ---------- RTA initiative ---------- */
-  .rta-grid{display:grid; grid-template-columns:1.1fr 1fr; gap:18px;}
-  @media(max-width:820px){.rta-grid{grid-template-columns:1fr;}}
-  .bar-row{margin-bottom:16px;}
-  .bar-row:last-child{margin-bottom:0;}
-  .bar-row .bar-label{
-    display:flex; justify-content:space-between; font-family:'IBM Plex Mono'; font-size:11.5px;
-    color:var(--text-dim); margin-bottom:6px;
-  }
-  .bar-row .bar-label b{color:var(--text); font-weight:500;}
-  .bar-track{height:8px; background:var(--panel-2); border-radius:4px; overflow:hidden;}
-  .bar-fill{height:100%; background:linear-gradient(90deg,var(--cyan),var(--amber)); border-radius:4px;}
-
-  .stat-list{list-style:none; margin:0; padding:0; font-family:'IBM Plex Sans'; font-size:13.5px;}
-  .stat-list li{
-    display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid var(--line);
-  }
-  .stat-list li:last-child{border-bottom:none;}
-  .stat-list .k{color:var(--text-dim);}
-  .stat-list .v{font-family:'IBM Plex Mono'; color:var(--amber); font-weight:600; text-align:right;}
-
-  /* ---------- Toll table ---------- */
-  .toll-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
-  @media(max-width:640px){.toll-grid{grid-template-columns:1fr;}}
-  .toll-card{
-    background:#0E1A22; border:1px solid #1F3D4A; border-radius:6px; padding:20px;
-  }
-  .toll-card.peak{border-color:#5A2E22; background:#1F110D;}
-  .toll-card .toll-time{font-family:'IBM Plex Mono'; font-size:11px; color:var(--text-dim); margin-bottom:10px; text-transform:uppercase; letter-spacing:.05em;}
-  .toll-card .toll-price{font-family:'Oswald', sans-serif; font-size:38px; font-weight:600; color:var(--cyan);}
-  .toll-card.peak .toll-price{color:var(--red);}
-  .toll-card .toll-price span{font-size:14px; font-family:'IBM Plex Mono'; color:var(--text-dim); margin-left:6px;}
-  .toll-card .toll-windows{font-family:'IBM Plex Sans'; font-size:12.5px; color:var(--text-dim); margin-top:10px; line-height:1.6;}
-
-  /* ---------- Footer ---------- */
-  footer{margin-top:70px; padding-top:26px; border-top:1px solid var(--line);}
-  footer .foot-title{font-family:'Oswald'; text-transform:uppercase; font-size:13px; letter-spacing:.06em; color:var(--text-dim); margin-bottom:12px;}
-  footer ul{margin:0; padding:0; list-style:none; font-family:'IBM Plex Mono'; font-size:11px; color:var(--text-dim); line-height:2;}
-  footer a{color:var(--cyan); text-decoration:none;}
-  footer a:hover{text-decoration:underline;}
-  .disclaimer{
-    margin-top:20px; font-family:'IBM Plex Sans'; font-size:12px; color:var(--text-dim);
-    background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:14px 16px;
-  }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gridlock Watch — UAE Traffic Congestion</title>
+  <meta name="description" content="An awareness dashboard tracking the rising impact of traffic congestion in the UAE.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#0a0d0e;--panel:#111718;--panel2:#151d1e;--line:#293435;
+      --text:#eef3ee;--muted:#9aa7a5;--amber:#ffb62e;--cyan:#43d9e8;
+      --red:#ff5d4d;--green:#8de38b;--shadow:0 20px 60px rgba(0,0,0,.28);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:
+      radial-gradient(circle at 80% 0%,rgba(67,217,232,.08),transparent 28rem),
+      radial-gradient(circle at 10% 15%,rgba(255,182,46,.06),transparent 30rem),
+      var(--bg);color:var(--text);font-family:"IBM Plex Sans",sans-serif;line-height:1.5}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.035;background-image:radial-gradient(#fff .6px,transparent .6px);background-size:5px 5px}
+    a{color:inherit}
+    .wrap{width:min(1180px,calc(100% - 32px));margin:auto}
+    header{border-bottom:1px solid var(--line);padding:18px 0;position:sticky;top:0;background:rgba(10,13,14,.9);backdrop-filter:blur(12px);z-index:10}
+    nav{display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{font-family:"IBM Plex Mono";font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+    .brand span{color:var(--amber)}
+    nav a{font-family:"IBM Plex Mono";font-size:11px;text-decoration:none;color:var(--muted);margin-left:18px}
+    nav a:hover{color:var(--cyan)}
+    .eyebrow{font:600 12px "IBM Plex Mono";letter-spacing:.18em;text-transform:uppercase;color:var(--cyan)}
+    .hero{padding:82px 0 46px;display:grid;grid-template-columns:1.15fr .85fr;gap:50px;align-items:center}
+    h1{font:700 clamp(54px,8vw,104px)/.9 "Oswald";letter-spacing:-.025em;text-transform:uppercase;margin:12px 0 24px}
+    h1 em{font-style:normal;color:var(--amber)}
+    .lede{font-size:19px;max-width:690px;color:#c5cfcc}
+    .source-note{font:11px "IBM Plex Mono";color:var(--muted);margin-top:20px}
+    .gantry{border:1px solid #394243;background:#080b0b;box-shadow:var(--shadow);padding:22px;transform:skewY(-1deg)}
+    .gantry-top{display:flex;justify-content:space-between;font:11px "IBM Plex Mono";color:var(--muted);border-bottom:1px solid #30393a;padding-bottom:12px}
+    .led{font:700 clamp(64px,10vw,116px)/.9 "IBM Plex Mono";color:var(--amber);letter-spacing:-.08em;text-shadow:0 0 18px rgba(255,182,46,.15);margin:26px 0 8px}
+    .led-label{font:600 16px "Oswald";text-transform:uppercase;letter-spacing:.12em}
+    .gantry-foot{margin-top:26px;padding-top:12px;border-top:1px solid #30393a;font:11px "IBM Plex Mono";color:var(--muted)}
+    .strip{display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--line);margin:16px 0 72px}
+    .metric{padding:24px 20px;border-right:1px solid var(--line)}
+    .metric:last-child{border-right:0}
+    .metric .value{font:700 36px "Oswald";color:var(--text)}
+    .metric .label{font:11px "IBM Plex Mono";text-transform:uppercase;color:var(--muted);margin-top:4px}
+    section{padding:34px 0 74px}
+    .section-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:22px}
+    h2{font:600 42px/1 "Oswald";text-transform:uppercase;margin:5px 0}
+    .sub{color:var(--muted);max-width:650px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .card{background:linear-gradient(145deg,var(--panel),#0e1314);border:1px solid var(--line);padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.14)}
+    .card h3{font:600 22px "Oswald";text-transform:uppercase;margin:0 0 16px}
+    .chartbox{height:330px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    button{background:#111819;color:var(--muted);border:1px solid var(--line);padding:9px 13px;font:600 11px "IBM Plex Mono";text-transform:uppercase;cursor:pointer}
+    button.active,button:hover{border-color:var(--amber);color:var(--amber);background:#191710}
+    .corridors{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .sign{position:relative;background:#102226;border:2px solid #5f6c6d;padding:20px 18px 18px;min-height:145px;box-shadow:inset 0 0 0 5px #0a1719}
+    .sign:before{content:"";position:absolute;left:-2px;right:-2px;top:-2px;height:6px;background:var(--cyan)}
+    .sign .route{font:700 12px "IBM Plex Mono";color:var(--amber);letter-spacing:.08em}
+    .sign h3{font:600 27px "Oswald";margin:8px 0 5px}
+    .sign p{font-size:13px;color:#aebdbc;margin:0}
+    .bars{display:grid;gap:18px}
+    .barrow{display:grid;grid-template-columns:180px 1fr 70px;gap:12px;align-items:center;font:12px "IBM Plex Mono"}
+    .bar{height:12px;background:#202829;border:1px solid #303b3c}
+    .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--amber))}
+    .barrow small{color:var(--muted);text-align:right}
+    .toll{display:grid;grid-template-columns:1fr 1fr;gap:0}
+    .tollbox{padding:28px;border:1px solid var(--line);background:var(--panel)}
+    .tollbox:first-child{border-right:0}
+    .tollbox .price{font:700 52px "Oswald";color:var(--amber)}
+    .tollbox p{color:var(--muted);margin:4px 0 0}
+    .callout{border-left:4px solid var(--cyan);background:#10191a;padding:18px 20px;margin-top:18px;color:#c7d1cf}
+    footer{border-top:1px solid var(--line);padding:42px 0 60px;color:var(--muted);font-size:13px}
+    footer a{color:var(--cyan);text-decoration:none}
+    .sources{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px;margin-top:18px}
+    .sources a{font:11px "IBM Plex Mono"}
+    .live{display:inline-flex;align-items:center;gap:7px;color:var(--green);font:10px "IBM Plex Mono";text-transform:uppercase}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+    @media(max-width:800px){
+      nav .links{display:none}.hero{grid-template-columns:1fr;padding-top:50px}.strip{grid-template-columns:1fr 1fr}
+      .metric:nth-child(2){border-right:0}.metric{border-bottom:1px solid var(--line)}
+      .grid2,.corridors{grid-template-columns:1fr}.toll{grid-template-columns:1fr}.tollbox:first-child{border-right:1px solid var(--line);border-bottom:0}
+      .barrow{grid-template-columns:115px 1fr 55px}h2{font-size:34px}.sources{grid-template-columns:1fr}
+    }
+  </style>
 </head>
 <body>
+<header>
+  <div class="wrap"><nav>
+    <div class="brand">GRIDLOCK <span>//</span> WATCH</div>
+    <div class="links"><a href="#trend">TREND</a><a href="#peaks">PEAKS</a><a href="#hotspots">HOTSPOTS</a><a href="#response">RTA RESPONSE</a></div>
+  </nav></div>
+</header>
 
-<div class="topbar">
-  <div class="brand"><span class="dot"></span>GRIDLOCK WATCH — UAE</div>
-  <div class="sub">DASHBOARD BUILD · AUG 2026</div>
-</div>
-
-<div class="wrap">
-
-  <!-- HERO -->
-  <div class="hero">
-    <div class="eyebrow">Highest-need problem · road congestion</div>
-    <h1>Traffic is the <em>fastest-worsening</em> daily burden on UAE residents</h1>
-
-    <div class="gantry">
+<main>
+  <div class="wrap">
+    <section class="hero">
       <div>
-        <div class="gantry-num">45<span class="gantry-unit">HRS / YEAR</span></div>
-        <div class="gantry-desc"><b>Hours lost to traffic</b> by the average Dubai motorist in 2025 — up from 35 hours in 2024, a 29% jump in a single year.</div>
+        <div class="eyebrow">UAE mobility monitor · updated August 2026</div>
+        <h1>Traffic is taking <em>time</em> away.</h1>
+        <p class="lede">Dubai motorists lost <strong>45 hours</strong> to congestion in 2025, up from 35 hours in 2024. The point is not just the number of cars — it is the time, stress and choices that congestion pushes into everyday life.</p>
+        <div class="source-note">INRIX 2025 Global Traffic Scorecard · reported by Khaleej Times</div>
       </div>
+      <div class="gantry" aria-label="45 hours lost to congestion">
+        <div class="gantry-top"><span>DUBAI / UAE</span><span>2025</span></div>
+        <div class="led">45</div>
+        <div class="led-label">hours lost to congestion</div>
+        <div class="gantry-foot">+10 HOURS VS 2024 · +29% YEAR / YEAR</div>
+      </div>
+    </section>
+
+    <div class="strip">
+      <div class="metric"><div class="value">19.1 min</div><div class="label">Average 10 km drive · 2025</div></div>
+      <div class="metric"><div class="value">8 sites</div><div class="label">RTA rapid-solution locations</div></div>
+      <div class="metric"><div class="value">45+</div><div class="label">Traffic enhancements planned · 2026</div></div>
+      <div class="metric"><div class="value">33%</div><div class="label">Capacity gain in selected 2025 works</div></div>
     </div>
-    <div class="source-note">Source: Inrix Global Traffic Report, via Khaleej Times (May 2026)</div>
+
+    <section id="trend">
+      <div class="section-head">
+        <div><div class="eyebrow">01 / THE TREND</div><h2>More time. Less movement.</h2></div>
+        <div class="live"><span class="dot"></span> current public reporting</div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Hours lost · Dubai</h3><div class="chartbox"><canvas id="hoursChart"></canvas></div></div>
+        <div class="card"><h3>10 km journey time</h3><div class="chartbox"><canvas id="timeChart"></canvas></div></div>
+      </div>
+      <div class="callout">TomTom reporting cited by Khaleej Times puts the average 10 km journey at 19.1 minutes in 2025, versus 13.7 minutes in 2024. That is a <strong>39% increase</strong> in the time needed for the same distance.</div>
+    </section>
+
+    <section id="peaks">
+      <div class="section-head">
+        <div><div class="eyebrow">02 / WHEN IT HITS</div><h2>Peak-hour pressure</h2><div class="sub">A transparent illustrative curve built from reported peak windows — not a live traffic feed.</div></div>
+        <div class="tabs"><button class="active" data-mode="weekday">Weekday</button><button data-mode="ramadan">Ramadan 2026</button></div>
+      </div>
+      <div class="card"><div class="chartbox"><canvas id="peakChart"></canvas></div></div>
+    </section>
+
+    <section id="hotspots">
+      <div class="section-head">
+        <div><div class="eyebrow">03 / WHERE IT HITS</div><h2>Hotspot corridors</h2><div class="sub">Major routes repeatedly identified in public traffic reporting. This is a situational awareness view, not a real-time feed.</div></div>
+        <div style="display:grid;gap:8px;justify-items:end">
+          <div class="tabs" aria-label="Choose city"><button class="active" data-city="dubai">Dubai</button><button data-city="abudhabi">Abu Dhabi</button></div>
+          <div class="tabs" aria-label="Choose traffic pattern"><button class="active" data-hotspot-mode="weekday">Weekday</button><button data-hotspot-mode="ramadan">Ramadan 2026</button></div>
+        </div>
+      </div>
+      <div class="source-note" id="hotspotContext" style="margin:0 0 16px">DUBAI · WEEKDAY PATTERN</div>
+      <div class="corridors" id="corridors"></div>
+    </section>
+
+    <section id="response">
+      <div class="section-head">
+        <div><div class="eyebrow">04 / THE RESPONSE</div><h2>RTA is moving too</h2><div class="sub">Dubai's 2026 plan targets more than 45 rapid traffic enhancements across eight strategic locations.</div></div>
+      </div>
+      <div class="card">
+        <div class="bars">
+          <div class="barrow"><span>2026 plan</span><div class="bar"><i style="width:100%"></i></div><strong>45+</strong></div>
+          <div class="barrow"><span>Strategic locations</span><div class="bar"><i style="width:18%"></i></div><strong>8</strong></div>
+          <div class="barrow"><span>2025 improvements</span><div class="bar"><i style="width:100%"></i></div><strong>67</strong></div>
+          <div class="barrow"><span>Selected capacity gain</span><div class="bar"><i style="width:33%"></i></div><strong>33%</strong></div>
+          <div class="barrow"><span>Target journey-time reduction</span><div class="bar"><i style="width:30%"></i></div><strong>15–30%</strong></div>
+        </div>
+      </div>
+      <div class="callout">RTA says its 2026 measures include lane widening, signalised intersections, new road links, access improvements and safety measures. The authority says targeted locations are expected to see journey-time reductions of <strong>15–30%</strong>.</div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <div><div class="eyebrow">05 / ROAD PRICING</div><h2>Salik changes the clock</h2><div class="sub">Ramadan 2026 pricing shifted the peak window to match altered travel patterns.</div></div>
+      </div>
+      <div class="toll">
+        <div class="tollbox"><div class="eyebrow">PEAK · MON–SAT</div><div class="price">AED 6</div><p>9:00am – 5:00pm</p></div>
+        <div class="tollbox"><div class="eyebrow">OFF-PEAK · MON–SAT</div><div class="price">AED 4</div><p>7:00–9:00am &amp; 5:00pm–2:00am</p></div>
+      </div>
+      <div class="callout">During Ramadan 2026, Salik was free from 2:00am–7:00am Monday–Saturday; Sundays were AED 4 outside the free period. Pricing shown here is historical 2026 Ramadan pricing, not a claim about today's tariff.</div>
+    </section>
   </div>
+</main>
 
-  <!-- METRIC STRIP -->
-  <div class="metric-strip">
-    <div class="metric up">
-      <div class="label">10km drive, avg. time</div>
-      <div class="val">19.1<span>min</span></div>
+<footer>
+  <div class="wrap">
+    <div class="eyebrow">DATA &amp; METHODOLOGY</div>
+    <p>Gridlock Watch uses the latest publicly reported figures available at the time of publication. Where no public live API is connected, values are explicitly labelled as reported or illustrative. The dashboard does not pretend to provide live road speeds.</p>
+    <div class="sources">
+      <a href="https://inrix.com/scorecard/" target="_blank" rel="noopener">INRIX · 2025 Global Traffic Scorecard</a>
+      <a href="https://www.khaleejtimes.com/uae/dubai-motorists-lose-45-hours-traffic-jams-2025" target="_blank" rel="noopener">Khaleej Times · 45 hours lost</a>
+      <a href="https://www.khaleejtimes.com/business/property/uae-residents-buying-renting-homes-closer-workplace-rising-traffic" target="_blank" rel="noopener">Khaleej Times · 19.1 min / 10 km</a>
+      <a href="https://www.mediaoffice.ae/en/news/2026/february/26-02/rta-implements-rapid-traffic-solutions-at-8-key-locations-across-dubai" target="_blank" rel="noopener">Dubai Media Office · RTA 2026 plan</a>
+      <a href="https://rta.ae/wps/portal/rta/ae/home/news-and-media/all-news/NewsDetails/67-rapid-traffic-improvements-to-serve-30-schools-and-9-development-areas" target="_blank" rel="noopener">RTA · 67 improvements in 2025</a>
+      <a href="https://gulfnews.com/uae/transport/salik-unveils-ramadan-toll-discounts-to-ease-dubai-traffic-1.500445521" target="_blank" rel="noopener">Gulf News · Salik Ramadan 2026 pricing</a>
     </div>
-    <div class="metric">
-      <div class="label">RTA 2026 upgrade sites</div>
-      <div class="val">8<span>locations</span></div>
-    </div>
-    <div class="metric">
-      <div class="label">Traffic initiatives underway</div>
-      <div class="val">45<span>projects</span></div>
-    </div>
-    <div class="metric down">
-      <div class="label">Al Khail Rd capacity gain</div>
-      <div class="val">+33<span>%</span></div>
-    </div>
+    <p style="margin-top:28px;font:11px 'IBM Plex Mono'">GRIDLOCK WATCH · STATIC AWARENESS DASHBOARD · MIT LICENSE</p>
   </div>
-
-  <!-- YEAR ON YEAR -->
-  <section>
-    <div class="sec-head">
-      <h2>Hours lost, year on year <span class="tag">Dubai</span></h2>
-      <p>Congestion returned to — and exceeded — pre-2024 norms as vehicle density climbed.</p>
-    </div>
-    <div class="panel">
-      <div class="chart-wrap"><canvas id="yoyChart"></canvas></div>
-      <div class="chart-caption">SOURCE: INRIX GLOBAL TRAFFIC REPORT · REPORTED VIA KHALEEJ TIMES, MAY 2026</div>
-    </div>
-  </section>
-
-  <!-- PEAK HOURS -->
-  <section>
-    <div class="sec-head">
-      <h2>Congestion by hour of day <span class="tag">Illustrative</span></h2>
-      <p>Relative congestion intensity built from RTA / Gulf News reported peak windows — not a live feed.</p>
-    </div>
-    <div class="panel">
-      <div class="toggle-group" style="margin-bottom:18px;">
-        <button class="toggle-btn active" data-mode="weekday">Standard weekday</button>
-        <button class="toggle-btn" data-mode="ramadan">Ramadan 2026 pattern</button>
-      </div>
-      <div class="chart-wrap"><canvas id="peakChart"></canvas></div>
-      <div class="chart-caption" id="peakCaption">STANDARD WEEKDAY PEAKS: 06:00–10:00 AND 16:00–20:00 · SOURCE: PITSTOP ARABIA / RTA</div>
-    </div>
-  </section>
-
-  <!-- HOTSPOTS -->
-  <section>
-    <div class="sec-head">
-      <h2>Reported hotspot corridors <span class="tag">Live-reported</span></h2>
-      <p>Recurring bottlenecks flagged in real-time Google Maps / Gulf News traffic reporting.</p>
-    </div>
-    <div class="toggle-group" style="margin-bottom:16px;">
-      <button class="toggle-btn active" data-city="dubai">Dubai</button>
-      <button class="toggle-btn" data-city="abudhabi">Abu Dhabi</button>
-    </div>
-    <div class="hotspot-grid" id="hotspotGrid"></div>
-  </section>
-
-  <!-- RTA PLAN -->
-  <section>
-    <div class="sec-head">
-      <h2>RTA 2026 intervention plan</h2>
-      <p>Data-led programme targeting the network's worst-performing corridors first.</p>
-    </div>
-    <div class="rta-grid">
-      <div class="panel">
-        <div class="bar-row">
-          <div class="bar-label"><span>Projected congestion reduction</span><b>15–30%</b></div>
-          <div class="bar-track"><div class="bar-fill" style="width:65%"></div></div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label"><span>Al Khail Rd — travel time cut</span><b>20%</b></div>
-          <div class="bar-track"><div class="bar-fill" style="width:20%"></div></div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label"><span>Al Khail Rd — capacity added</span><b>33%</b></div>
-          <div class="bar-track"><div class="bar-fill" style="width:33%"></div></div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label"><span>Oud Metha / Al Asayel project</span><b>90% complete</b></div>
-          <div class="bar-track"><div class="bar-fill" style="width:90%"></div></div>
-        </div>
-      </div>
-      <div class="panel">
-        <ul class="stat-list">
-          <li><span class="k">Strategic intervention sites</span><span class="v">8</span></li>
-          <li><span class="k">Total initiatives</span><span class="v">45</span></li>
-          <li><span class="k">New bridge — Oud Metha (3-lane)</span><span class="v">Opened Jul 2026</span></li>
-          <li><span class="k">Sharjah road investment (Nov 2025)</span><span class="v">AED 150M</span></li>
-          <li><span class="k">Daily inter-emirate commuters</span><span class="v">1M+</span></li>
-          <li><span class="k">Vehicle count growth (2yr)</span><span class="v">+10%</span></li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- SALIK TOLL -->
-  <section>
-    <div class="sec-head">
-      <h2>Salik toll pricing — peak vs off-peak</h2>
-      <p>Dynamic pricing designed to shift demand away from rush hour.</p>
-    </div>
-    <div class="toll-grid">
-      <div class="toll-card peak">
-        <div class="toll-time">Peak hours</div>
-        <div class="toll-price">6<span>AED</span></div>
-        <div class="toll-windows">06:00 – 10:00<br>16:00 – 20:00</div>
-      </div>
-      <div class="toll-card">
-        <div class="toll-time">Off-peak hours</div>
-        <div class="toll-price">4<span>AED</span></div>
-        <div class="toll-windows">10:00 – 16:00<br>20:00 – 01:00</div>
-      </div>
-    </div>
-  </section>
-
-  <div class="disclaimer">
-    <b style="color:var(--text)">About this build:</b> figures above are drawn from public reporting (cited below) current as of August 2026. The hour-by-hour congestion curve is an illustrative pattern derived from reported peak windows, not a live traffic feed. To make this production-ready, swap the peak-hour chart for a live source such as the TomTom Traffic Index API or Google Maps Traffic API, and connect the hotspot list to RTA's real-time monitoring feed.
-  </div>
-
-  <footer>
-    <div class="foot-title">Sources</div>
-    <ul>
-      <li>→ <a href="https://www.khaleejtimes.com/uae/uae-property-trends-traffic-redefines-where-residents-live" target="_blank">Khaleej Times — Traffic redefines where residents live (May 2026)</a></li>
-      <li>→ <a href="https://gulfbusiness.com/en/2026/infrastructure/dubai-rta-45-traffic-upgrades-commutes-change/" target="_blank">Gulf Business — RTA 45 traffic upgrades (2026)</a></li>
-      <li>→ <a href="https://www.emirates247.com/uae-guide/dubai-traffic-2026-5-new-rta-road-projects-slash-travel-times-across-the-city/4038" target="_blank">Emirates 24|7 — 5 new RTA road projects (2026)</a></li>
-      <li>→ <a href="https://gulfnews.com/uae/transport/ramadan-2026-uae-traffic-guide-peak-hours-key-roads-and-how-to-beat-the-congestion-1.500446898" target="_blank">Gulf News — Ramadan 2026 traffic guide</a></li>
-      <li>→ <a href="https://gulfnews.com/uae/transport/uae-traffic-alert-rush-hour-gridlock-hits-key-routes-in-dubai-and-abu-dhabi-1.500317917" target="_blank">Gulf News — Rush-hour gridlock hotspots</a></li>
-      <li>→ <a href="https://www.pitstoparabia.com/en/news/uae-traffic-congestion-solutions" target="_blank">Pitstop Arabia — How the UAE plans to tackle congestion</a></li>
-    </ul>
-  </footer>
-
-</div>
+</footer>
 
 <script>
-Chart.defaults.font.family = "'IBM Plex Mono', monospace";
-Chart.defaults.color = '#9BA3AC';
+const chartDefaults={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+  x:{grid:{color:"rgba(255,255,255,.05)"},ticks:{color:"#9aa7a5",font:{family:"IBM Plex Mono",size:10}}},
+  y:{grid:{color:"rgba(255,255,255,.05)"},ticks:{color:"#9aa7a5",font:{family:"IBM Plex Mono",size:10}},beginAtZero:true}
+}};
+new Chart(document.getElementById("hoursChart"),{type:"bar",data:{labels:["2024","2025"],datasets:[{data:[35,45],backgroundColor:["#394344","#ffb62e"],borderWidth:0,borderRadius:2}]},options:{...chartDefaults,scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,title:{display:true,text:"hours",color:"#9aa7a5"}}}}});
+new Chart(document.getElementById("timeChart"),{type:"bar",data:{labels:["2024","2025"],datasets:[{data:[13.7,19.1],backgroundColor:["#394344","#43d9e8"],borderWidth:0,borderRadius:2}]},options:{...chartDefaults,scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,title:{display:true,text:"minutes / 10 km",color:"#9aa7a5"}}}}});
 
-// ---- Year on year hours lost ----
-new Chart(document.getElementById('yoyChart'), {
-  type: 'bar',
-  data:{
-    labels:['2024','2025'],
-    datasets:[{
-      data:[35,45],
-      backgroundColor:['#2A3034','#F2A93B'],
-      borderRadius:4,
-      barThickness:70
-    }]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.parsed.y+' hours lost'}}},
-    scales:{
-      y:{beginAtZero:true, grid:{color:'#262B2F'}, ticks:{callback:v=>v+'h'}},
-      x:{grid:{display:false}}
-    }
-  }
-});
-
-// ---- Peak hour illustrative pattern ----
-const hours = Array.from({length:24}, (_,i)=>i);
-const weekday = [8,6,5,4,5,10,35,68,82,60,38,32,35,40,45,58,78,92,84,55,30,20,14,10];
-const ramadan = [22,14,10,8,10,14,20,35,72,66,40,30,28,26,24,30,55,88,96,70,42,38,58,40];
-
-const peakCtx = document.getElementById('peakChart');
-let peakChart = new Chart(peakCtx, {
-  type:'line',
-  data:{
-    labels:hours.map(h=>String(h).padStart(2,'0')+':00'),
-    datasets:[{
-      label:'Congestion index',
-      data:weekday,
-      borderColor:'#F2A93B',
-      backgroundColor:'rgba(242,169,59,0.15)',
-      fill:true, tension:0.35, pointRadius:0, borderWidth:2
-    }]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{
-      y:{beginAtZero:true, grid:{color:'#262B2F'}, ticks:{callback:v=>v}},
-      x:{grid:{display:false}, ticks:{maxTicksLimit:12}}
-    }
-  }
-});
-
-document.querySelectorAll('[data-mode]').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('[data-mode]').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const mode = btn.dataset.mode;
-    peakChart.data.datasets[0].data = mode==='ramadan' ? ramadan : weekday;
-    peakChart.data.datasets[0].borderColor = mode==='ramadan' ? '#35C9C1' : '#F2A93B';
-    peakChart.data.datasets[0].backgroundColor = mode==='ramadan' ? 'rgba(53,201,193,0.15)' : 'rgba(242,169,59,0.15)';
-    peakChart.update();
-    document.getElementById('peakCaption').textContent = mode==='ramadan'
-      ? 'RAMADAN 2026 PATTERN: MORNING 08:30–10:30 · IFTAR RUSH 17:00–19:15 (WORST WINDOW) · POST-TARAWEEH 21:00–23:30 · SOURCE: GULF NEWS'
-      : 'STANDARD WEEKDAY PEAKS: 06:00–10:00 AND 16:00–20:00 · SOURCE: PITSTOP ARABIA / RTA';
-  });
-});
-
-// ---- Hotspots ----
-const hotspots = {
-  dubai:[
-    {road:'Sheikh Mohammed Bin Zayed Rd', code:'E311', note:'Extreme inbound delays during morning rush — primary feeder from Sharjah/Abu Dhabi.', sev:'high'},
-    {road:'Emirates Road', code:'E611', note:'Heavy congestion at inter-emirate merge points, especially Monday mornings.', sev:'high'},
-    {road:'Al Khail Road', code:'D65', note:'Recently upgraded: +33% capacity, -20% peak travel time toward Abu Dhabi.', sev:'med'},
-    {road:'Ras Al Khor Road', code:'D91', note:'New lanes and entry/exit upgrades completed July 2026 to ease flow.', sev:'med'},
-  ],
-  abudhabi:[
-    {road:'Mussafah Bridge', code:'—', note:'Typical peak-hour bottleneck as inbound traffic converges into the capital.', sev:'high'},
-    {road:'Al Maqta Bridge', code:'—', note:'Recurring congestion during standard AM/PM rush windows.', sev:'high'},
-    {road:'Sheikh Zayed Bin Sultan St', code:'E10', note:'Residual delays reported near Corniche despite completed roadworks.', sev:'med'},
-    {road:'Sheikh Khalifa Bin Zayed St', code:'E12', note:'Recommended alternative route for smoother inbound journeys.', sev:'med'},
-  ]
+const peakData={
+ weekday:{labels:["6am","7am","8am","9am","10am","11am","12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm"],data:[18,28,44,50,34,24,21,20,22,29,43,58,62,55,39,25]},
+ ramadan:{labels:["6am","7am","8am","9am","10am","11am","12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"],data:[12,18,32,42,35,27,24,23,25,30,39,55,72,66,50,42,34,29]}
 };
-
-function renderHotspots(city){
-  const grid = document.getElementById('hotspotGrid');
-  grid.innerHTML = '';
-  hotspots[city].forEach(h=>{
-    const el = document.createElement('div');
-    el.className = 'sign';
-    el.innerHTML = `
-      <div class="sev ${h.sev}">${h.sev==='high'?'Severe':'Moderate'}</div>
-      <div class="road">${h.road} ${h.code!=='—' ? `<span class="code">${h.code}</span>` : ''}</div>
-      <div class="note">${h.note}</div>
-    `;
-    grid.appendChild(el);
-  });
+let peakChart;
+function drawPeak(mode){
+  if(peakChart) peakChart.destroy();
+  peakChart=new Chart(document.getElementById("peakChart"),{type:"line",data:{labels:peakData[mode].labels,datasets:[{data:peakData[mode].data,borderColor:"#43d9e8",backgroundColor:"rgba(67,217,232,.10)",fill:true,tension:.35,pointRadius:2,pointBackgroundColor:"#ffb62e"}]},options:{...chartDefaults,plugins:{...chartDefaults.plugins,tooltip:{callbacks:{label:c=>`Illustrative congestion index: ${c.raw}`}}},scales:{...chartDefaults.scales,y:{...chartDefaults.scales.y,max:80,title:{display:true,text:"illustrative index",color:"#9aa7a5"}}}}});
 }
-renderHotspots('dubai');
+drawPeak("weekday");
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("[data-mode]").forEach(x=>x.classList.remove("active"));b.classList.add("active");drawPeak(b.dataset.mode)}));
 
-document.querySelectorAll('[data-city]').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('[data-city]').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    renderHotspots(btn.dataset.city);
-  });
-});
+const cityCorridors={
+ dubai:[
+  ["E11","Sheikh Zayed Road","High-volume spine through Dubai; congestion is especially pronounced around major interchanges during commute periods."],
+  ["E44","Al Khail Road","Major alternative corridor with heavy demand connecting residential districts to business areas."],
+  ["E311","Emirates Road","Northern approach and inter-emirate commuter corridor; RTA has targeted several connected locations."],
+  ["E611","Mohammed bin Zayed Road","Strategic east-side corridor carrying substantial inter-emirate and cross-city traffic."],
+  ["Jebel Ali","Jebel Ali–Lehbab Street","One of the locations named in RTA's 2026 rapid traffic-solution programme."],
+  ["SZR ↔ CBD","Sheikh Zayed Road / Downtown","Inbound commuter pressure toward central employment districts."]
+ ],
+ abudhabi:[
+  ["E10","Abu Dhabi–Dubai corridor","Key inter-emirate route connecting the two largest urban economies."],
+  ["E11","Abu Dhabi urban approaches","Major north-south movement corridor with high commuter demand."],
+  ["E20","Al Khaleej Al Arabi St","Central Abu Dhabi movement corridor with peak-period pressure."],
+  ["E22","Abu Dhabi–Al Ain Road","Strategic inland connection carrying commuter and regional traffic."],
+  ["E30","Mussafah approaches","Industrial and employment-area access creates recurring peak demand."],
+  ["CBD","Central Abu Dhabi","Urban core access and bridge approaches concentrate commuter flows."]
+ ]};
+
+const hotspotNotes={
+ weekday:{
+  dubai:["Typical weekday commuter pressure is strongest around morning and evening work trips.","Business-district access can concentrate demand around major interchanges.","Inter-emirate commuting adds pressure to northern and eastern approaches.","Cross-city traffic keeps alternative corridors busy during conventional peaks.","Employment and logistics traffic can overlap with commuter demand.","Central employment districts draw strong inbound and outbound flows."],
+  abudhabi:["Conventional weekday commuting drives strong directional demand.","Urban approaches experience concentrated work-trip traffic.","Central corridors carry recurring morning and evening peaks.","Regional commuting contributes to weekday traffic pressure.","Industrial shift patterns can overlap with commuter peaks.","Bridge and central-city approaches concentrate work-trip demand."]
+ },
+ ramadan:{
+  dubai:["Ramadan travel patterns shift later in the day, with pressure building toward the pre-Iftar period.","Afternoon demand can intensify as work and school schedules compress before Iftar.","Inter-emirate movements can bunch into shorter afternoon travel windows.","Later evening activity can extend congestion beyond the conventional commute peak.","Logistics and commuter flows may overlap differently because of shortened working hours.","Pre-Iftar and post-Iftar trips can create a more pronounced late-day pattern."] ,
+  abudhabi:["Ramadan schedules can shift commuter demand toward a shorter afternoon window before Iftar.","Urban approaches may see earlier-than-usual afternoon pressure.","Central-city movement can intensify as working hours and evening activity shift.","Regional trips may cluster before Iftar and resume again later in the evening.","Industrial and commuter flows can overlap at different times than on a standard weekday.","Central and bridge approaches may experience a stronger late-afternoon pulse."]
+ }};
+
+let activeCity="dubai";
+let activeHotspotMode="weekday";
+function renderHotspots(){
+ const el=document.getElementById("corridors");
+ el.innerHTML="";
+ const notes=hotspotNotes[activeHotspotMode][activeCity];
+ cityCorridors[activeCity].forEach((x,i)=>{
+   const d=document.createElement("article");
+   d.className="sign";
+   d.innerHTML=`<div class="route">${x[0]} · ${activeHotspotMode === "ramadan" ? "RAMADAN" : "WEEKDAY"}</div><h3>${x[1]}</h3><p>${notes[i]}</p>`;
+   el.appendChild(d);
+ });
+ const cityLabel=activeCity === "dubai" ? "DUBAI" : "ABU DHABI";
+ const modeLabel=activeHotspotMode === "ramadan" ? "RAMADAN 2026 · ILLUSTRATIVE PATTERN" : "WEEKDAY PATTERN";
+ document.getElementById("hotspotContext").textContent=`${cityLabel} · ${modeLabel}`;
+}
+renderHotspots();
+document.querySelectorAll("[data-city]").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll("[data-city]").forEach(x=>x.classList.remove("active"));
+ b.classList.add("active");activeCity=b.dataset.city;renderHotspots();
+}));
+document.querySelectorAll("[data-hotspot-mode]").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll("[data-hotspot-mode]").forEach(x=>x.classList.remove("active"));
+ b.classList.add("active");activeHotspotMode=b.dataset.hotspotMode;renderHotspots();
+}));
 </script>
-
 </body>
 </html>
