@@ -3,7 +3,7 @@
 An interactive, single-file dashboard visualizing one of the UAE's highest-need,
 fastest-worsening problems: road traffic congestion.
 
-**[Live demo →](#deploying) (deploy with GitHub Pages, see below)**
+[**Live demo →**](https://Jamila-Hanif.github.io/uae-traffic-dashboard/)
 
 ---
 
