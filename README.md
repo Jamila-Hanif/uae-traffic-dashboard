@@ -23,20 +23,18 @@ Traffic congestion was selected for this project over other candidate issues suc
 * Measurable effects that can be communicated visually
 * An active government response through RTA traffic-improvement programmes
 
----
-
 ## 📊 What the Dashboard Shows
 
-| **Section**        | **What it visualizes**                                                                   |
-| ------------------ | ---------------------------------------------------------------------------------------- |
-| Hero statistic     | Annual hours lost to congestion, styled as a highway gantry sign                         |
-| Metric strip       | 10 km journey time, RTA upgrade locations, planned initiatives and capacity improvements |
-| Year-on-year trend | Comparison of congestion hours in 2024 and 2025                                          |
-| Journey-time chart | Comparison of average time required to travel 10 km                                      |
-| Peak-hour chart    | Toggle between standard weekday and Ramadan 2026 congestion patterns                     |
-| Hotspot corridors  | Toggle between major Dubai and Abu Dhabi traffic corridors                               |
-| RTA response       | Overview of the government's 2026 rapid traffic-improvement programme                    |
-| Salik pricing      | Peak and off-peak Ramadan 2026 toll pricing                                              |
+| **Section**        | **What it visualizes**                                                                                                     |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Hero statistic     | Annual hours lost to congestion, styled as a highway gantry sign                                                           |
+| Metric strip       | 10 km journey time, RTA upgrade locations, planned initiatives and capacity improvements                                   |
+| Year-on-year trend | Comparison of congestion hours in 2024 and 2025                                                                            |
+| Journey-time chart | Comparison of average time required to travel 10 km                                                                        |
+| Peak-hour chart    | Toggle between standard weekday and Ramadan 2026 congestion patterns                                                       |
+| Hotspot corridors  | Interactive Dubai / Abu Dhabi and Weekday / Ramadan 2026 controls for comparing congestion patterns across major corridors |
+| RTA response       | Overview of the government's 2026 rapid traffic-improvement programme                                                      |
+| Salik pricing      | Peak and off-peak Ramadan 2026 toll pricing                                                                                |
 
 ---
 
@@ -48,11 +46,14 @@ Where reported numerical data is available, the dashboard displays those figures
 
 The **hour-by-hour congestion curves are illustrative**. They are constructed from publicly reported peak travel windows rather than a live traffic API.
 
-Similarly, the hotspot section identifies major corridors discussed in public traffic reporting; it should **not be interpreted as a real-time traffic map**.
+The **Hotspot Corridors** section allows users to switch between **Dubai and Abu Dhabi** and compare **Weekday and Ramadan 2026** traffic patterns. The Ramadan hotspot descriptions are illustrative interpretations based on publicly reported peak periods and traffic patterns; they should not be interpreted as real-time measurements of individual roads.
 
-This distinction is intentional: the dashboard aims to communicate the scale and pattern of congestion without implying a level of real-time precision that the underlying data cannot support.
+The hotspot corridors themselves represent major routes identified through public traffic reporting. The dashboard therefore provides a **situational-awareness and comparison view rather than a live traffic map**.
 
----
+This distinction is intentional: Gridlock Watch communicates the scale, location and timing of congestion without implying a level of real-time precision that the underlying public data cannot support.
+
+
+
 
 ## 🛠 Tech Stack
 
