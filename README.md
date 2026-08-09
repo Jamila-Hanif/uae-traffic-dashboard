@@ -1,129 +1,192 @@
 # Gridlock Watch — UAE Traffic Congestion Dashboard
 
-An interactive, single-file dashboard visualizing one of the UAE's highest-need,
-fastest-worsening problems: road traffic congestion.
+An interactive dashboard exploring one of the UAE's most visible and fast-growing urban challenges: **road traffic congestion**.
 
-[**Live demo →**](https://Jamila-Hanif.github.io/uae-traffic-dashboard/)
+[**View Live Dashboard →**](https://jamila-hanif.github.io/uae-traffic-dashboard/)
 
 ---
 
-## The problem
+## 🚦 The Problem
 
-Dubai motorists lost **45 hours to traffic in 2025**, up from 35 hours in 2024 — a
-29% jump in a single year (Inrix Global Traffic Report). A 10km drive now averages
-**19.1 minutes**. Congestion is reshaping where people live, feeding into commuter
-stress and burnout, and costing the road network measurably as vehicle density
-climbs faster than infrastructure.
+Traffic congestion is becoming an increasingly significant challenge across the UAE, particularly in Dubai.
 
-Of the candidate problems considered (traffic, housing affordability, healthcare
-access), traffic congestion was chosen because it had:
-- The clearest year-over-year worsening trend
-- The most available public data (Inrix, TomTom, RTA, Gulf News reporting)
-- A live government response already underway (RTA's 2026 intervention plan) to
-  benchmark against
+Dubai motorists lost **45 hours to traffic in 2025**, compared with 35 hours in 2024 — an increase of approximately **29% in one year**, according to figures reported from the INRIX Global Traffic Scorecard.
 
-## What the dashboard shows
-| **Section** | **What it visualizes** |
-| --- | --- |
-| Hero stat | Hours lost per year, styled as a highway gantry sign |
-| Metric strip | Avg. 10km drive time, RTA upgrade sites, initiative count, capacity gains |
-| Year-on-year chart | 2024 vs 2025 hours lost (Chart.js bar chart) |
-| Peak-hour chart | Toggle between standard weekday and Ramadan 2026 congestion patterns |
-| Hotspot corridors | Toggle Dubai / Abu Dhabi, styled as highway exit signs |
-| RTA 2026 plan | Progress bars for the government's 45-initiative, 8-site intervention plan |
-| Salik toll pricing | Peak vs off-peak toll comparison |
+The average time required to travel **10 km reached approximately 19.1 minutes** in 2025.
 
-All figures are sourced from public reporting current to August 2026 (full source
-list in the dashboard footer and below). The hour-by-hour congestion curve is
-explicitly labeled **illustrative** — it's built from reported peak windows, not a
-live traffic feed, and the dashboard says so rather than implying more precision
-than the data supports.
+Beyond longer journeys, congestion can influence commuting patterns, residential choices and pressure on the road network as travel demand grows.
 
-## Tech stack
+Traffic congestion was selected for this project over other candidate issues such as housing affordability and healthcare access because it offered:
 
-- Plain HTML/CSS/JS — no build step, no framework, one file
-- [Chart.js 4.5.0](https://www.chartjs.org/) via cdnjs for the bar/line charts
-- Google Fonts: Oswald (display), IBM Plex Sans (body), IBM Plex Mono (data/labels)
-- Design direction: dark "asphalt" background with amber/cyan signal colors and a
-  dot-matrix gantry-sign motif for key numbers — chosen to be visually specific to
-  the subject (highway signage, Salik toll gantries) rather than a generic
-  dashboard template
+* A clear year-over-year worsening trend
+* Strong availability of public reporting and transport data
+* Measurable effects that can be communicated visually
+* An active government response through RTA traffic-improvement programmes
 
-## A bug that came up, and the fix
+---
 
-The first version shipped with every stat and chart missing. Root cause: the
-`<script>` tag pointed at Chart.js version `4.4.4` on cdnjs —
+## 📊 What the Dashboard Shows
+
+| **Section**        | **What it visualizes**                                                                   |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| Hero statistic     | Annual hours lost to congestion, styled as a highway gantry sign                         |
+| Metric strip       | 10 km journey time, RTA upgrade locations, planned initiatives and capacity improvements |
+| Year-on-year trend | Comparison of congestion hours in 2024 and 2025                                          |
+| Journey-time chart | Comparison of average time required to travel 10 km                                      |
+| Peak-hour chart    | Toggle between standard weekday and Ramadan 2026 congestion patterns                     |
+| Hotspot corridors  | Toggle between major Dubai and Abu Dhabi traffic corridors                               |
+| RTA response       | Overview of the government's 2026 rapid traffic-improvement programme                    |
+| Salik pricing      | Peak and off-peak Ramadan 2026 toll pricing                                              |
+
+---
+
+## 🧭 Data & Methodology
+
+The dashboard uses publicly reported figures available at the time of development.
+
+Where reported numerical data is available, the dashboard displays those figures directly.
+
+The **hour-by-hour congestion curves are illustrative**. They are constructed from publicly reported peak travel windows rather than a live traffic API.
+
+Similarly, the hotspot section identifies major corridors discussed in public traffic reporting; it should **not be interpreted as a real-time traffic map**.
+
+This distinction is intentional: the dashboard aims to communicate the scale and pattern of congestion without implying a level of real-time precision that the underlying data cannot support.
+
+---
+
+## 🛠 Tech Stack
+
+* **HTML5**
+* **CSS3**
+* **Vanilla JavaScript**
+* **Chart.js 4.5.0** for interactive charts
+* **Google Fonts**
+
+  * Oswald — display typography
+  * IBM Plex Sans — body text
+  * IBM Plex Mono — statistics and labels
+* **GitHub Pages** for deployment
+
+The project requires **no framework, package manager or build step**. The complete interactive dashboard runs from a single `index.html` file.
+
+---
+
+## 🎨 Design Direction
+
+The interface takes inspiration from UAE road infrastructure rather than using a generic analytics-dashboard aesthetic.
+
+The visual system combines:
+
+* Dark asphalt-inspired backgrounds
+* Amber traffic-warning accents
+* Cyan information signals
+* Highway exit-sign styling
+* Gantry-style statistics
+* Monospaced transport/data labels
+
+The goal is to make the subject of the dashboard immediately recognizable while keeping the information easy to scan.
+
+---
+
+## 🐛 Technical Note: Chart.js CDN Issue
+
+During development, an incorrect Chart.js CDN version caused the dashboard's JavaScript to stop executing.
+
+The broken reference was:
 
 ```html
-<!-- broken: this version was never published to cdnjs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 ```
 
-That 404'd, so `Chart` was undefined. The first `new Chart(...)` call threw, which
-halted the rest of the inline `<script>` block — including the hotspot-card
-rendering and the toggle-button event listeners further down the same script.
-One dead CDN link took out charts, stats formatting, and interactivity together.
+Because that resource failed to load, `Chart` was undefined. The first chart initialization then threw an error and prevented later JavaScript — including hotspot rendering and toggle interactions — from executing.
 
-Fix: point at a version that's actually hosted on cdnjs.
+The working reference is:
 
 ```html
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 ```
 
-**Lesson for anyone reusing this file:** if you change the Chart.js version, verify
-the exact path exists at `https://cdnjs.com/libraries/Chart.js` first — a silently
-failed CDN script can take out unrelated JS later in the same file, not just the
-charts.
+**Key lesson:** external CDN dependencies should be verified before deployment because a failed dependency can affect functionality beyond the component that directly uses it.
 
-## Running locally
+---
 
-No install needed — it's a static file.
+## 💻 Running Locally
 
-```bash
-git clone https://github.com/<your-username>/uae-traffic-dashboard.git
-cd uae-traffic-dashboard
-open index.html          # macOS
-# or just double-click index.html
-```
-
-## Deploying
-
-**GitHub Pages (recommended, free):**
-1. Push this repo to GitHub (see commands below)
-2. Repo → Settings → Pages → Source: `Deploy from a branch` → Branch: `main` → `/ (root)`
-3. Your dashboard goes live at `https://<your-username>.github.io/uae-traffic-dashboard/`
-
-## Pushing this to GitHub
+Clone the repository:
 
 ```bash
+git clone https://github.com/Jamila-Hanif/uae-traffic-dashboard.git
 cd uae-traffic-dashboard
-git init
-git add .
-git commit -m "Initial commit: UAE traffic congestion dashboard"
-git branch -M main
-git remote add origin https://github.com/<your-username>/uae-traffic-dashboard.git
-git push -u origin main
 ```
 
-(Create the empty repo first at github.com/new, then run the commands above.)
+On macOS:
 
-## Data sources
+```bash
+open index.html
+```
 
-- [Khaleej Times — Traffic redefines where residents live](https://www.khaleejtimes.com/uae/uae-property-trends-traffic-redefines-where-residents-live) (May 2026)
-- [Gulf Business — RTA 45 traffic upgrades](https://gulfbusiness.com/en/2026/infrastructure/dubai-rta-45-traffic-upgrades-commutes-change/) (2026)
-- [Emirates 24|7 — 5 new RTA road projects](https://www.emirates247.com/uae-guide/dubai-traffic-2026-5-new-rta-road-projects-slash-travel-times-across-the-city/4038) (2026)
-- [Gulf News — Ramadan 2026 traffic guide](https://gulfnews.com/uae/transport/ramadan-2026-uae-traffic-guide-peak-hours-key-roads-and-how-to-beat-the-congestion-1.500446898)
-- [Gulf News — Rush-hour gridlock hotspots](https://gulfnews.com/uae/transport/uae-traffic-alert-rush-hour-gridlock-hits-key-routes-in-dubai-and-abu-dhabi-1.500317917)
-- [Pitstop Arabia — How the UAE plans to tackle congestion](https://www.pitstoparabia.com/en/news/uae-traffic-congestion-solutions)
+Alternatively, open `index.html` directly in any modern browser.
 
-## Roadmap / next steps
+No installation is required.
 
-- [ ] Swap the illustrative peak-hour curve for a live source (TomTom Traffic Index
-      API or Google Maps Traffic API)
-- [ ] Connect the hotspot list to RTA's real-time monitoring feed
-- [ ] Add a map view (Mapbox/Leaflet) plotting hotspot corridors geographically
-- [ ] Historical trend beyond 2024–2025 once more years of Inrix data are public
+---
 
-## License
+## 🌐 Live Deployment
 
-MIT — reuse and adapt freely.
+The dashboard is deployed using **GitHub Pages**.
+
+[**Open Gridlock Watch →**](https://jamila-hanif.github.io/uae-traffic-dashboard/)
+
+Repository:
+
+https://github.com/Jamila-Hanif/uae-traffic-dashboard
+
+---
+
+## 📚 Data Sources
+
+The project draws on public reporting and transport information including:
+
+* **INRIX Global Traffic Scorecard** — annual congestion and hours-lost data
+* **TomTom traffic reporting** — journey-time indicators
+* **Dubai Roads and Transport Authority (RTA)** — traffic-improvement programmes
+* **Dubai Media Office** — RTA infrastructure and rapid traffic-solution announcements
+* **Khaleej Times** — UAE congestion and commuting reporting
+* **Gulf News** — Ramadan traffic patterns and Salik pricing
+* **Gulf Business** — RTA traffic-upgrade reporting
+* **Emirates 24|7** — Dubai road-project reporting
+
+Detailed source links are included within the dashboard.
+
+---
+
+## 🚀 Roadmap
+
+Future improvements could include:
+
+* Connect a licensed **live traffic API** to replace the illustrative peak-hour curve
+* Integrate publicly available **RTA real-time traffic information**
+* Add an interactive geographic map using **Leaflet or Mapbox**
+* Plot congestion hotspots geographically
+* Expand the historical trend beyond 2024–2025
+* Add commuter-impact indicators such as estimated time cost, fuel consumption and emissions
+* Add responsive filtering for individual roads and time periods
+
+---
+
+## ⚠️ Disclaimer
+
+Gridlock Watch is an **awareness and data-visualization project**, not a navigation or official traffic-information service.
+
+Illustrative visualizations are explicitly identified and should not be interpreted as real-time traffic conditions.
+
+For current road conditions, users should rely on official transport authorities and real-time navigation services.
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**.
+
+Reuse and adaptation are welcome with appropriate attribution.
+
