@@ -23,9 +23,8 @@ access), traffic congestion was chosen because it had:
   benchmark against
 
 ## What the dashboard shows
-
-| Section | What it visualizes |
-|---|---|
+| **Section** | **What it visualizes** |
+| --- | --- |
 | Hero stat | Hours lost per year, styled as a highway gantry sign |
 | Metric strip | Avg. 10km drive time, RTA upgrade sites, initiative count, capacity gains |
 | Year-on-year chart | 2024 vs 2025 hours lost (Chart.js bar chart) |
